@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mapa Mental: Ingeniería y Ciberseguridad</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #020617; /* Slate 950 */
+            color: #f8fafc; /* Slate 50 */
+            overflow-x: hidden;
+        }
+        
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.7); /* Slate 900 con opacidad */
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(56, 189, 248, 0.2); /* Borde cyan tenue */
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .node {
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            z-index: 10;
+        }
+
+        .node:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(56, 189, 248, 0.3);
+            border-color: #38bdf8;
+        }
+
+        .node.active {
+            background: rgba(56, 189, 248, 0.15);
+            border-color: #38bdf8;
+            box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
+        }
+
+        .node-center {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border: 2px solid #38bdf8;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
+            transform: scale(1.1);
+        }
+        
+        .node-center:hover {
+            transform: scale(1.15);
+        }
+
+        /* Contenedor SVG para las líneas */
+        #svg-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            pointer-events: none;
+        }
+
+        /* Animación de entrada para el panel */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateX(20px); }
+            to { opacity: 1; transform: translateX(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+
+        /* Scrollbar personalizado */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #38bdf8; }
+    </style>
+</head>
+<body class="h-screen flex flex-col">
+
+    <header class="p-6 border-b border-slate-800 bg-slate-900/80 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-white tracking-wide">
+                    Magno Consulting <span class="text-sky-400">| Mapa Conceptual</span>
+                </h1>
+                <p class="text-sm text-slate-400 mt-1">Articulación de la Ingeniería de Sistemas en Ciberseguridad Corporativa</p>
+            </div>
+            <div class="hidden md:flex items-center gap-3 bg-slate-800 px-4 py-2 rounded-full border border-slate-700">
+                <i class="fa-solid fa-circle-info text-sky-400"></i>
+                <span class="text-sm text-slate-300">Haz clic en los nodos para ver la relación</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col lg:flex-row overflow-hidden relative">
+        
+        <!-- Área del Mapa (Izquierda/Arriba) -->
+        <section class="w-full lg:w-3/5 h-[50vh] lg:h-full relative p-4 lg:p-10 flex items-center justify-center overflow-y-auto lg:overflow-hidden" id="map-section">
+            <svg id="svg-container"></svg>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 md:gap-10 w-full max-w-4xl relative z-10 py-10">
+                
+                <!-- Fila 1 -->
+                <div class="flex justify-center items-end">
+                    <button id="node-software" onclick="selectNode('software')" class="node glass-panel p-4 rounded-xl w-48 text-center flex flex-col items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-sky-400 text-xl border border-slate-700">
+                            <i class="fa-solid fa-code"></i>
+                        </div>
+                        <span class="font-semibold text-slate-200">Software</span>
+                    </button>
+                </div>
+                
+                <div class="flex justify-center items-end">
+                    <button id="node-seguridad" onclick="selectNode('seguridad')" class="node glass-panel p-4 rounded-xl w-48 text-center flex flex-col items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-sky-400 text-xl border border-slate-700">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <span class="font-semibold text-slate-200">Seguridad</span>
+                    </button>
+                </div>
+                
+                <div class="flex justify-center items-end">
+                    <button id="node-redes" onclick="selectNode('redes')" class="node glass-panel p-4 rounded-xl w-48 text-center flex flex-col items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-sky-400 text-xl border border-slate-700">
+                            <i class="fa-solid fa-network-wired"></i>
+                        </div>
+                        <span class="font-semibold text-slate-200">Redes</span>
+                    </button>
+                </div>
+
+                <!-- Fila 2 (Centro) -->
+                <div class="flex justify-center items-center">
+                    <button id="node-programacion" onclick="selectNode('programacion')" class="node glass-panel p-4 rounded-xl w-48 text-center flex flex-col items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-sky-400 text-xl border border-slate-700">
+                            <i class="fa-solid fa-terminal"></i>
+                        </div>
+                        <span class="font-semibold text-slate-200">Programación</span>
+                    </button>
+                </div>
+                
+                <!-- NODO CENTRAL -->
+                <div class="flex justify-center items-center relative z-20">
+                    <button id="node-ingeniero" onclick="selectNode('ingeniero')" class="node node-center p-6 rounded-2xl w-56 text-center flex flex-col items-center gap-4">
+                        <div class="w-16 h-16 rounded-full bg-sky-900/50 flex items-center justify-center text-sky-400 text-3xl border border-sky-400 shadow-[0_0_15px_rgba(56,189,248,0.5)]">
+                            <i class="fa-solid fa-user-tie"></i>
+                        </div>
+                        <div>
+                            <span class="block text-xs text-sky-300 font-bold uppercase tracking-widest mb-1">Centro</span>
+                            <span class="font-bold text-white text-lg">Rol del Ingeniero</span>
+                        </div>
+                    </button>
+                </div>
+                
+                <div class="flex justify-center items-center">
+                    <button id="node-infraestructura" onclick="selectNode('infraestructura')" class="node glass-panel p-4 rounded-xl w-48 text-center flex flex-col items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-sky-400 text-xl border border-slate-700">
+                            <i class="fa-solid fa-server"></i>
+                        </div>
+                        <span class="font-semibold text-slate-200">Infraestructura TI</span>
+                    </button>
+                </div>
+
+                <!-- Fila 3 -->
+                <div class="hidden md:block"></div> <!-- Spacer -->
+                
+                <div class="flex justify-center items-start">
+                    <button id="node-tendencias" onclick="selectNode('tendencias')" class="node glass-panel p-4 rounded-xl w-48 text-center flex flex-col items-center gap-3">
+                        <div class="w-12 h-12 rounded-full bg-slate-800 flex items-center justify-center text-sky-400 text-xl border border-slate-700">
+                            <i class="fa-solid fa-microchip"></i>
+                        </div>
+                        <span class="font-semibold text-slate-200">Tendencias</span>
+                    </button>
+                </div>
+                
+                <div class="hidden md:block"></div> <!-- Spacer -->
+
+            </div>
+        </section>
+
+        <!-- Panel de Información (Derecha/Abajo) -->
+        <section class="w-full lg:w-2/5 glass-panel border-l-0 lg:border-l lg:border-t-0 border-t z-20 flex flex-col h-[50vh] lg:h-full bg-slate-900/90 shadow-2xl">
+            <div id="info-panel" class="p-8 overflow-y-auto h-full flex flex-col">
+                <!-- Estado vacío inicial -->
+                <div id="empty-state" class="flex-grow flex flex-col items-center justify-center text-center opacity-60">
+                    <i class="fa-regular fa-hand-pointer text-6xl text-slate-500 mb-6"></i>
+                    <h3 class="text-2xl font-light text-slate-300">Selecciona un concepto</h3>
+                    <p class="text-slate-400 mt-2 max-w-sm">Haz clic en cualquier nodo del mapa a la izquierda para explorar cómo se integra en la solución propuesta.</p>
+                </div>
+
+                <!-- Contenido Dinámico (oculto por defecto) -->
+                <div id="content-state" class="hidden h-full flex-col">
+                    <div class="flex items-center gap-4 border-b border-slate-700 pb-6 mb-6">
+                        <div id="panel-icon" class="w-16 h-16 rounded-xl bg-sky-900/30 flex items-center justify-center text-sky-400 text-3xl border border-sky-400/50">
+                            <i class="fa-solid fa-code"></i>
+                        </div>
+                        <div>
+                            <h2 id="panel-title" class="text-3xl font-bold text-white">Título</h2>
+                            <p class="text-sky-400 font-medium tracking-wide text-sm uppercase mt-1">Concepto Clave</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6 flex-grow">
+                        <!-- Definición Teórica -->
+                        <div class="bg-slate-800/50 rounded-lg p-5 border border-slate-700/50">
+                            <h4 class="flex items-center gap-2 text-slate-200 font-semibold mb-2">
+                                <i class="fa-solid fa-book text-sky-400"></i> 1. Definición Teórica
+                            </h4>
+                            <p id="panel-theory" class="text-slate-400 leading-relaxed text-sm md:text-base">...</p>
+                        </div>
+
+                        <!-- Aplicación en el Caso -->
+                        <div class="bg-sky-900/20 rounded-lg p-5 border border-sky-800/30">
+                            <h4 class="flex items-center gap-2 text-white font-semibold mb-2">
+                                <i class="fa-solid fa-briefcase text-sky-400"></i> 2. Aplicación en el Caso (TechCorp)
+                            </h4>
+                            <p id="panel-case" class="text-slate-300 leading-relaxed text-sm md:text-base">...</p>
+                        </div>
+
+                        <!-- Analogía -->
+                        <div class="bg-slate-800/50 rounded-lg p-5 border border-slate-700/50">
+                            <h4 class="flex items-center gap-2 text-slate-200 font-semibold mb-2">
+                                <i class="fa-solid fa-lightbulb text-yellow-400"></i> 3. Analogía para la Exposición
+                            </h4>
+                            <p id="panel-analogy" class="text-slate-400 leading-relaxed italic text-sm md:text-base">...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        // Base de datos de conocimientos del mapa mental
+        const mindMapData = {
+            "ingeniero": {
+                title: "Rol del Ingeniero",
+                icon: "fa-user-tie",
+                theory: "Es el profesional que analiza problemas complejos, diseña arquitecturas tecnológicas y gestiona la integración de software, hardware y redes para alinear la tecnología con los objetivos del negocio.",
+                case: "Actúa como consultor estratégico (Magno Consulting). Diagnostica el origen de las filtraciones en TechCorp y diseña la arquitectura de la 'Triple Armadura Digital' en lugar de solo arreglar máquinas aisladas.",
+                analogy: "Es el arquitecto jefe que diseña los planos de seguridad del banco, ubicando bóvedas, sensores y controles de acceso, no es simplemente el cerrajero que instala la chapa."
+            },
+            "seguridad": {
+                title: "Seguridad Informática",
+                icon: "fa-shield-halved",
+                theory: "Conjunto de disciplinas, protocolos y herramientas diseñadas para proteger la confidencialidad, integridad y disponibilidad (Tríada CIA) de la información y los sistemas.",
+                case: "Es el objetivo central del proyecto. Se materializa dividiendo la estrategia en tres pilares: Autenticación (MFA), Control de Acceso (RBAC) y Cifrado (VPN) para detener los ataques internos y externos.",
+                analogy: "Son las murallas de contención, los candados físicos, los guardias y las alarmas de un complejo de alta seguridad."
+            },
+            "software": {
+                title: "Software (Sistemas)",
+                icon: "fa-code",
+                theory: "Componentes lógicos y aplicaciones informáticas. Proporciona la interfaz y las reglas de procesamiento mediante las cuales los usuarios interactúan con los datos.",
+                case: "Implementación de Sistemas de Gestión de Identidad y Acceso (IAM). Es el software que evalúa si el usuario validó su llave USB y decide qué ventanas, menús y datos mostrarle según su rol.",
+                analogy: "Son las 'reglas escritas' y el sistema de intercomunicadores del edificio que dictan quién puede abrir qué puerta y en qué horario."
+            },
+            "redes": {
+                title: "Redes y Comunicaciones",
+                icon: "fa-network-wired",
+                theory: "Infraestructura de telecomunicaciones que permite la interconexión de equipos para compartir información y recursos mediante protocolos estandarizados.",
+                case: "Se aplica mediante la creación de túneles VPN corporativos, cifrado militar de extremo a extremo y segmentación de la red local para evitar que un atacante se mueva lateralmente si compromete un equipo.",
+                analogy: "El internet público es un taxi con ventanas abiertas. La red configurada (VPN) es un camión blindado subterráneo; si alguien lo intercepta, la información va en cajas fuertes indescifrables."
+            },
+            "programacion": {
+                title: "Programación Lógica",
+                icon: "fa-terminal",
+                theory: "Proceso de crear y codificar algoritmos para que las computadoras ejecuten tareas específicas, gestionen bases de datos y automaticen procesos.",
+                case: "Escritura de código para la segmentación. Implica crear consultas SQL restrictivas para las bases de datos y scripts que auditen automáticamente cualquier intento de inicio de sesión sospechoso.",
+                analogy: "Es el lenguaje y las instrucciones exactas que se utilizan para programar electrónicamente las cerraduras digitales y definir sus combinaciones."
+            },
+            "infraestructura": {
+                title: "Infraestructura TI",
+                icon: "fa-server",
+                theory: "Conjunto de elementos de hardware, servidores, centros de datos, instalaciones y equipos físicos necesarios para operar los entornos de TI.",
+                case: "Despliegue del componente físico: las llaves de seguridad USB (FIDO2) entregadas a los empleados, los servidores que alojan las bases de datos y los firewalls de hardware instalados en la empresa.",
+                analogy: "Son los objetos físicos palpables: La caja fuerte de acero en sí misma y la llave de metal que el gerente lleva en su bolsillo."
+            },
+            "tendencias": {
+                title: "Tendencias Tecnológicas",
+                icon: "fa-microchip",
+                theory: "Adopción de nuevas metodologías, arquitecturas e innovaciones que definen la vanguardia de la industria tecnológica actual.",
+                case: "Se aplica abandonando las contraseñas clásicas hacia un enfoque 'Passwordless' (sin contraseña) y adoptando la filosofía 'Zero Trust' (Cero Confianza): nunca confiar por defecto, siempre verificar rigurosamente.",
+                analogy: "Es pasar de revisar la identificación de un empleado solo en la puerta principal de la empresa, a tener guardias que pidan su ID en cada pasillo, oficina y escritorio."
+            }
+        };
+
+        // Dibuja las líneas SVG conectando el centro con los nodos
+        function drawConnections() {
+            const svg = document.getElementById('svg-container');
+            svg.innerHTML = ''; // Limpiar líneas anteriores
+            
+            const centerNode = document.getElementById('node-ingeniero');
+            if (!centerNode) return;
+
+            const mapSection = document.getElementById('map-section');
+            const centerRect = centerNode.getBoundingClientRect();
+            const mapRect = mapSection.getBoundingClientRect();
+            
+            // Calcular centro del nodo central relativo al contenedor
+            const cx = centerRect.left + centerRect.width / 2 - mapRect.left + mapSection.scrollLeft;
+            const cy = centerRect.top + centerRect.height / 2 - mapRect.top + mapSection.scrollTop;
+
+            const childIds = ['software', 'seguridad', 'redes', 'programacion', 'infraestructura', 'tendencias'];
+            
+            childIds.forEach(id => {
+                const node = document.getElementById('node-' + id);
+                if (node && node.offsetParent !== null) { // Si el nodo es visible
+                    const rect = node.getBoundingClientRect();
+                    const nx = rect.left + rect.width / 2 - mapRect.left + mapSection.scrollLeft;
+                    const ny = rect.top + rect.height / 2 - mapRect.top + mapSection.scrollTop;
+
+                    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                    line.setAttribute('x1', cx);
+                    line.setAttribute('y1', cy);
+                    line.setAttribute('x2', nx);
+                    line.setAttribute('y2', ny);
+                    line.setAttribute('stroke', '#0ea5e9'); // Sky 500
+                    line.setAttribute('stroke-width', '2');
+                    line.setAttribute('stroke-dasharray', '6,6');
+                    line.setAttribute('opacity', '0.4');
+                    
+                    // Efecto hover sutil para la línea
+                    line.style.transition = 'all 0.3s';
+                    line.id = 'line-' + id;
+                    
+                    svg.appendChild(line);
+                }
+            });
+        }
+
+        let currentNode = null;
+
+        function selectNode(nodeId) {
+            // Remover estado activo de todos los nodos y líneas
+            document.querySelectorAll('.node').forEach(n => n.classList.remove('active'));
+            document.querySelectorAll('line').forEach(l => {
+                l.setAttribute('opacity', '0.4');
+                l.setAttribute('stroke', '#0ea5e9');
+                l.setAttribute('stroke-width', '2');
+            });
+
+            // Activar nodo seleccionado
+            const selectedElement = document.getElementById('node-' + nodeId);
+            selectedElement.classList.add('active');
+
+            // Activar línea correspondiente si no es el centro
+            if (nodeId !== 'ingeniero') {
+                const activeLine = document.getElementById('line-' + nodeId);
+                if (activeLine) {
+                    activeLine.setAttribute('opacity', '1');
+                    activeLine.setAttribute('stroke', '#38bdf8');
+                    activeLine.setAttribute('stroke-width', '3');
+                }
+            } else {
+                // Si es el centro, iluminar todas las líneas
+                document.querySelectorAll('line').forEach(l => {
+                    l.setAttribute('opacity', '0.8');
+                    l.setAttribute('stroke', '#38bdf8');
+                });
+            }
+
+            // Actualizar datos del panel
+            const data = mindMapData[nodeId];
+            
+            document.getElementById('empty-state').classList.add('hidden');
+            
+            const contentState = document.getElementById('content-state');
+            contentState.classList.remove('hidden');
+            
+            // Reiniciar animación
+            contentState.classList.remove('animate-fade-in');
+            void contentState.offsetWidth; // Trigger reflow
+            contentState.classList.add('animate-fade-in');
+
+            // Llenar contenido
+            document.getElementById('panel-icon').innerHTML = `<i class="fa-solid ${data.icon}"></i>`;
+            document.getElementById('panel-title').textContent = data.title;
+            document.getElementById('panel-theory').textContent = data.theory;
+            document.getElementById('panel-case').textContent = data.case;
+            document.getElementById('panel-analogy').textContent = data.analogy;
+
+            // Desplazar panel hacia arriba en móviles
+            if (window.innerWidth < 1024) {
+                document.querySelector('section.w-full.lg\\:w-2\\/5').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Inicialización
+        window.addEventListener('load', () => {
+            // Pequeño retraso para asegurar que los elementos estén renderizados
+            setTimeout(() => {
+                drawConnections();
+                // Seleccionar el rol del ingeniero por defecto al inicio
+                selectNode('ingeniero'); 
+            }, 100);
+        });
+        
+        // Redibujar líneas si cambia el tamaño de la pantalla
+        window.addEventListener('resize', () => {
+            drawConnections();
+        });
+        
+        // Redibujar en scroll dentro del mapa
+        document.getElementById('map-section').addEventListener('scroll', drawConnections);
+
+    </script>
+</body>
+</html>
